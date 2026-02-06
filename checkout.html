@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout | 8th Ave Pizzeria</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="top-left">
+      <a class="btn" href="cart.html">Back to Cart</a>
+    </div>
+
+    <div class="top-center">
+      <img class="brand-logo" src="IMG/logo.png" alt="8th Ave Pizzeria Logo" />
+    </div>
+
+    <div class="top-right">
+      <a class="btn" href="order-status.html">Track Order</a>
+    </div>
+  </div>
+</header>
+
+<main style="max-width: 980px; margin: 40px auto; padding: 0 16px;">
+  <h1>Checkout & Payment</h1>
+
+  <div style="display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top: 18px;">
+    <div style="border:1px solid #eee; border-radius:18px; padding:16px;">
+      <h3 style="margin-top:0;">Payment (Sandbox)</h3>
+
+      <form id="payForm" style="display:grid; gap:10px;">
+        <label>
+          Card Number
+          <input id="card" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242"
+                 required style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;" />
+        </label>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <label>
+            Exp (MM/YY)
+            <input id="exp" placeholder="12/29" required
+                   style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;" />
+          </label>
+
+          <label>
+            CVV
+            <input id="cvv" inputmode="numeric" maxlength="4" placeholder="123" required
+                   style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;" />
+          </label>
+        </div>
+
+        <label>
+          Email for receipt
+          <input id="email" type="email" placeholder="you@example.com" required
+                 style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;" />
+        </label>
+
+        <button class="btn" type="submit">Pay Now</button>
+        <div id="msg" style="font-weight:700;"></div>
+      </form>
+    </div>
+
+    <div style="border:1px solid #eee; border-radius:18px; padding:16px;">
+      <h3 style="margin-top:0;">Order Summary</h3>
+      <div id="summary"></div>
+      <div style="margin-top:12px; font-weight:900;">Total: <span id="total"></span></div>
+    </div>
+  </div>
+  
+</main>
+
+<script>
+  const TAX_RATE = 0.08;
+
+  function getCart() {
+    return JSON.parse(localStorage.getItem("cartItems")) || [];
+  }
+  function setCart(items) {
+    localStorage.setItem("cartItems", JSON.stringify(items));
+  }
+  function money(n) { return "$" + Number(n).toFixed(2); }
+
+  function calcTotals(items) {
+    const subtotal = items.reduce((s, i) => s + (i.price * i.qty), 0);
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+    return { subtotal, tax, total };
+  }
+
+  function makeOrderId() {
+    return "ORD-" + Math.random().toString(16).slice(2, 8).toUpperCase();
+  }
+
+  function renderSummary() {
+    const items = getCart();
+    const summary = document.getElementById("summary");
+
+    if (!items.length) {
+      summary.innerHTML = `<div style="opacity:.7;">Your cart is empty.</div>`;
+      document.getElementById("total").textContent = money(0);
+      return;
+    }
+
+    summary.innerHTML = items.map(i => `
+      <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #f2f2f2;">
+        <div>${i.name} <span style="opacity:.7;">x${i.qty}</span></div>
+        <div style="font-weight:800;">${money(i.price * i.qty)}</div>
+      </div>
+    `).join("");
+
+    const t = calcTotals(items);
+    document.getElementById("total").textContent = money(t.total);
+  }
+
+  function saveLatestOrder(order) {
+    localStorage.setItem("latestOrder", JSON.stringify(order));
+  }
+
+  document.getElementById("payForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("msg");
+    const items = getCart();
+
+    if (!items.length) {
+      msg.textContent = "Cart is empty.";
+      msg.style.color = "crimson";
+      return;
+    }
+
+    msg.textContent = "Authorizing payment (sandbox)...";
+    msg.style.color = "#333";
+
+    const totals = calcTotals(items);
+    const order = {
+      id: makeOrderId(),
+      createdAt: new Date().toISOString(),
+      items,
+      totals,
+      payment: {
+        provider: "SandboxGateway",
+        status: "authorized",
+        amount: totals.total
+      },
+      status: "Order Received",
+      timeline: ["Order Received"]
+    };
+
+    setTimeout(() => {
+      saveLatestOrder(order);
+      setCart([]);
+      msg.textContent = "Payment approved. Redirecting to tracking...";
+      msg.style.color = "green";
+      setTimeout(() => {
+        window.location.href = "order-status.html";
+      }, 700);
+    }, 800);
+  });
+
+  renderSummary();
+</script>
+
+</body>
+</html>

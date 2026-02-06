@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart | 8th Ave Pizzeria</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+
+    <div class="top-left">
+      <a href="index.html" class="btn">Home</a>
+    </div>
+
+    <div class="top-center">
+      <img class="brand-logo" src="IMG/logo.png" alt="8th Ave Pizzeria Logo" />
+    </div>
+
+    <div class="top-right">
+      <a href="login.html" class="btn btn-login">Login</a>
+      <a href="menu.html" class="btn">Order Online</a>
+      <span class="phone">(313) 555-0123</span>
+
+      <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart" style="margin-left:12px; text-decoration:none;">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-count">0</span>
+      </a>
+    </div>
+
+  </div>
+</header>
+
+<main class="cart-page">
+
+  <h1 class="cart-title">Your Cart</h1>
+
+  <div class="cart-layout">
+
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-summary">
+      <h2>Order Summary</h2>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="subtotal">$0.00</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Tax</span>
+        <span id="tax">$0.00</span>
+      </div>
+
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="total">$0.00</span>
+      </div>
+
+      <a href="checkout.html" class="checkout-btn" id="checkoutBtn">Proceed to Checkout</a>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const TAX_RATE = 0.08;
+
+  function getCart() {
+    return JSON.parse(localStorage.getItem("cartItems")) || [];
+  }
+
+  function setCart(items) {
+    localStorage.setItem("cartItems", JSON.stringify(items));
+  }
+
+  function money(n) {
+    return "$" + Number(n).toFixed(2);
+  }
+
+  function updateCartCount() {
+    const items = getCart();
+    const count = items.reduce((sum, item) => sum + (item.qty || 0), 0);
+    document.querySelectorAll(".cart-count").forEach(el => el.textContent = count);
+  }
+
+  function calcTotals(items) {
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+    return { subtotal, tax, total };
+  }
+
+  function renderCart() {
+    const cartItemsEl = document.getElementById("cartItems");
+    const items = getCart();
+
+    if (!items.length) {
+      cartItemsEl.innerHTML = `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <h3>Your cart is empty</h3>
+            <p>Add something from the menu to see it here.</p>
+          </div>
+        </div>
+      `;
+      document.getElementById("subtotal").textContent = money(0);
+      document.getElementById("tax").textContent = money(0);
+      document.getElementById("total").textContent = money(0);
+      document.getElementById("checkoutBtn").style.pointerEvents = "none";
+      document.getElementById("checkoutBtn").style.opacity = "0.5";
+      updateCartCount();
+      return;
+    }
+
+    cartItemsEl.innerHTML = items.map(item => {
+      const opt = item.options || {};
+      const line2 = [opt.size, opt.crust, opt.toppings].filter(Boolean).join(" • ");
+      return `
+        <div class="cart-item" data-key="${item.key}">
+          <div class="cart-item-info">
+            <h3>${item.name}</h3>
+            <p>${line2 || ""}</p>
+            <button class="remove-btn" type="button">Remove</button>
+          </div>
+
+          <div class="cart-item-controls">
+            <input class="qty-input" type="number" value="${item.qty}" min="1" />
+            <span class="cart-price">${money(item.price * item.qty)}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const totals = calcTotals(items);
+    document.getElementById("subtotal").textContent = money(totals.subtotal);
+    document.getElementById("tax").textContent = money(totals.tax);
+    document.getElementById("total").textContent = money(totals.total);
+
+    document.getElementById("checkoutBtn").style.pointerEvents = "auto";
+    document.getElementById("checkoutBtn").style.opacity = "1";
+
+    updateCartCount();
+  }
+
+  document.addEventListener("input", (e) => {
+    if (!e.target.classList.contains("qty-input")) return;
+
+    const row = e.target.closest(".cart-item");
+    const key = row.dataset.key;
+
+    const items = getCart();
+    const found = items.find(i => i.key === key);
+    if (!found) return;
+
+    const newQty = Math.max(1, Number(e.target.value || 1));
+    found.qty = newQty;
+
+    setCart(items);
+    renderCart();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("remove-btn")) return;
+
+    const row = e.target.closest(".cart-item");
+    const key = row.dataset.key;
+
+    let items = getCart();
+    items = items.filter(i => i.key !== key);
+
+    setCart(items);
+    renderCart();
+  });
+
+  renderCart();
+</script>
+
+</body>
+</html>

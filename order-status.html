@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Status | 8th Ave Pizzeria</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="top-left">
+      <a href="index.html" class="btn">Home</a>
+      <a href="menu.html" class="btn">Menu</a>
+    </div>
+    <div class="top-center">
+      <img class="brand-logo" src="IMG/logo.png" alt="8th Ave Pizzeria Logo" />
+    </div>
+    <div class="top-right">
+      <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart" style="text-decoration:none;">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-count">0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="cart-page">
+  <h1 class="cart-title">Order Tracking</h1>
+
+  <div class="cart-layout">
+    <div class="cart-items">
+      <div class="cart-item">
+        <div class="cart-item-info" style="width:100%;">
+          <h3 id="headline">Loading…</h3>
+          <p id="meta" style="opacity:.75;"></p>
+
+          <div id="timeline" style="display:grid; gap:10px; margin-top:14px;"></div>
+
+          <button class="checkout-btn" id="resetBtn" type="button" style="margin-top:14px; max-width:260px; background:#333;">
+            Start New Order
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-summary">
+      <h2>Payment</h2>
+      <div class="summary-row"><span>Status</span><span id="pStatus">—</span></div>
+      <div class="summary-row"><span>Provider</span><span id="pProv">—</span></div>
+      <div class="summary-row total"><span>Amount</span><span id="pAmt">—</span></div>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  updateCartCount();
+
+  let order = getOrder();
+  if (!order) location.href = "menu.html";
+
+  document.getElementById("headline").textContent = `Order ${order.id}`;
+  document.getElementById("meta").textContent = `Placed: ${new Date(order.createdAt).toLocaleString()}`;
+
+  document.getElementById("pStatus").textContent = order.payment?.status || "—";
+  document.getElementById("pProv").textContent = order.payment?.provider || "—";
+  document.getElementById("pAmt").textContent = money(order.payment?.amount || order.total);
+
+  function renderTimeline() {
+    const t = document.getElementById("timeline");
+    t.innerHTML = order.statuses.map((s, idx) => {
+      const done = idx < order.statusIndex;
+      const current = idx === order.statusIndex;
+      const tag = done ? "Done" : current ? "In Progress" : "Next";
+      const opacity = done ? "1" : current ? "1" : ".55";
+      return `
+        <div style="border:1px solid #ddd; border-radius:12px; padding:12px; opacity:${opacity}; display:flex; justify-content:space-between;">
+          <span style="font-weight:800;">${s}</span>
+          <span style="font-weight:800;">${tag}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  renderTimeline();
+
+  const timer = setInterval(() => {
+    if (order.statusIndex >= order.statuses.length - 1) {
+      clearInterval(timer);
+      return;
+    }
+    order.statusIndex += 1;
+    setOrder(order);
+    renderTimeline();
+  }, 2500);
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    localStorage.removeItem("currentOrder");
+    location.href = "menu.html";
+  });
+</script>
+
+</body>
+</html>

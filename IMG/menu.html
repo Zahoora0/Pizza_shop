@@ -1,0 +1,84 @@
+<script>
+  function getCart() {
+    return JSON.parse(localStorage.getItem("cartItems")) || [];
+  }
+  function setCart(items) {
+    localStorage.setItem("cartItems", JSON.stringify(items));
+  }
+
+  // MATCH index.html format
+  function makeKey(name, size, crust, toppings) {
+    return `${name}|${size}|${crust}|${toppings}`;
+  }
+
+  function updateCartCount() {
+    const items = getCart();
+    const count = items.reduce((sum, item) => sum + (item.qty || 0), 0);
+    document.querySelectorAll(".cart-count").forEach(el => el.textContent = count);
+  }
+
+  function getMenu() {
+    const saved = JSON.parse(localStorage.getItem("menuItems")) || [];
+    if (saved.length) return saved;
+
+    const starter = [
+      { id:"m1", name:"Classic Pepperoni", price:14.99, category:"Pizza", image:"", active:true },
+      { id:"m2", name:"Golden Cheese Pie", price:13.99, category:"Pizza", image:"", active:true },
+      { id:"m3", name:"Garden Supreme", price:15.99, category:"Pizza", image:"", active:true }
+    ];
+    localStorage.setItem("menuItems", JSON.stringify(starter));
+    return starter;
+  }
+
+  function renderMenu() {
+    const grid = document.getElementById("grid");
+    const items = getMenu().filter(x => x.active);
+
+    if (!items.length) {
+      grid.innerHTML = `<div style="opacity:.7;">No active items. Add items in Admin.</div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map(item => `
+      <div style="border:1px solid #eee; border-radius:18px; padding:14px;">
+        <div style="font-weight:900; font-size: 18px;">${item.name}</div>
+        <div style="opacity:.75; margin-top: 4px;">${item.category}</div>
+        <div style="margin-top: 10px; font-weight:800;">$${Number(item.price).toFixed(2)}</div>
+
+        <button class="btn add-btn"
+                data-name="${item.name}"
+                data-price="${item.price}"
+                data-size="Large"
+                data-crust="Classic"
+                data-toppings="Cheese"
+                style="margin-top: 12px;">
+          Add to cart
+        </button>
+      </div>
+    `).join("");
+  }
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".add-btn");
+    if (!btn) return;
+
+    const name = btn.dataset.name;
+    const price = Number(btn.dataset.price);
+    const size = btn.dataset.size;
+    const crust = btn.dataset.crust;
+    const toppings = btn.dataset.toppings;
+
+    const cart = getCart();
+    const key = makeKey(name, size, crust, toppings);
+    const existing = cart.find(i => i.key === key);
+
+    if (existing) existing.qty += 1;
+    else cart.push({ key, name, price, qty: 1, options: { size, crust, toppings } });
+
+    setCart(cart);
+    updateCartCount();
+  });
+
+  renderMenu();
+  updateCartCount();
+</script>

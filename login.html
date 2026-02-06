@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | 8th Ave Pizzeria</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+
+    <div class="top-right">
+      <img class="brand-logo" src="IMG/logo.png" alt="8th Ave Pizzeria Logo" />
+    </div>
+
+ 
+  </div>
+</header>
+
+<main class="auth-wrap">
+
+  <div class="auth-card">
+    <h1 class="auth-title">Welcome Back</h1>
+
+    <form class="auth-form">
+      <label class="auth-label">Email</label>
+      <input class="auth-input" type="email" placeholder="you@example.com" required />
+
+      <label class="auth-label">Password</label>
+      <input class="auth-input" type="password" placeholder="Enter your password" required />
+
+      <button class="auth-submit" type="submit">Log In</button>
+    </form>
+
+    <p class="auth-text">
+      Don’t have an account?
+      <a class="auth-link" href="register.html">Create one</a>
+    </p>
+  </div>
+
+</main>
+
+<script>
+  const items = JSON.parse(localStorage.getItem("cartItems")) || [];
+  const count = items.reduce((sum, i) => sum + i.qty, 0);
+  document.querySelectorAll(".cart-count").forEach(el => el.textContent = count);
+</script>
+<script src="app.js"></script>
+<script>
+  document.querySelector("button, input[type='submit'], .login-btn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setSession({ email: "admin@8thave.com", role: "admin" });
+    location.href = "admin.html";
+  });
+</script>
+
+</body>
+</html>

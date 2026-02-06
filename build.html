@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Your Pizza | 8th Ave Pizzeria</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .builder-wrap{
+      max-width: 1050px;
+      margin: 40px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 24px;
+    }
+    .pizza-stage{
+      position: relative;
+      aspect-ratio: 1/1;
+      border: 1px solid #ddd;
+      border-radius: 18px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .pizza-layer{
+      position: absolute;
+      inset: 8%;
+      width: 84%;
+      height: 84%;
+      object-fit: contain;
+      pointer-events: none;
+      opacity: 1;
+    }
+    .hidden{ opacity: 0; }
+    .topping-drop{ animation: drop .45s ease-out; }
+    @keyframes drop{
+      0%{ transform: translateY(-60px) scale(.96); opacity: 0; }
+      60%{ opacity: 1; }
+      100%{ transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .panel{
+      border: 1px solid #ddd;
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+    }
+    .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+    .chip{
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fafafa;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .chip.active{ border-color:#111; background:#111; color:#fff; }
+    .price{ font-size: 22px; font-weight: 900; margin-top: 14px; }
+    .btn-main{
+      display:inline-block;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #b10f0f;
+      color: #fff;
+      text-decoration:none;
+      font-weight: 900;
+      text-align:center;
+      max-width: 260px;
+    }
+    .note{ opacity:.7; margin-top:6px; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="top-left">
+      <a href="index.html" class="btn">Home</a>
+      <a href="menu.html" class="btn">Menu</a>
+    </div>
+
+    <div class="top-center">
+      <img class="brand-logo" src="IMG/logo.png" alt="8th Ave Pizzeria Logo" />
+    </div>
+
+    <div class="top-right">
+      <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart" style="text-decoration:none;">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-count">0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="builder-wrap">
+
+  <section class="pizza-stage" aria-label="Pizza preview">
+  <!-- BASE (full size) -->
+  <img class="pizza-layer" src="IMG/pizzabase.png" alt="Pizza base">
+
+  <!-- TOPPINGS (smaller) -->
+  <img id="mushroomsLayer"
+       class="pizza-layer pizza-topping hidden"
+       src="IMG/mushrooms.png"
+       alt="Mushrooms">
+
+  <img id="basilLayer"
+       class="pizza-layer pizza-topping hidden"
+       src="IMG/basil.png"
+       alt="Basil">
+
+  <img id="peppersLayer"
+       class="pizza-layer pizza-topping hidden"
+       src="IMG/peppers.png"
+       alt="Peppers">
+
+  <img id="olivesLayer"
+       class="pizza-layer pizza-topping hidden"
+       src="IMG/olives.png"
+       alt="Olives">
+      
+</section>
+
+  <section class="panel">
+    <h2 style="margin:0;">Create Your Own Pizza</h2>
+    <div class="note">Pick a size, click toppings, then add to cart.</div>
+
+    <h3 style="margin:14px 0 6px;">Size</h3>
+    <div class="chips" id="sizeChips">
+      <button class="chip active" data-size="Small" data-add="0">Small</button>
+      <button class="chip" data-size="Medium" data-add="2">Medium</button>
+      <button class="chip" data-size="Large" data-add="4">Large</button>
+    </div>
+
+    <h3 style="margin:14px 0 6px;">Crust</h3>
+    <div class="chips" id="crustChips">
+      <button class="chip active" data-crust="Classic" data-add="0">Classic</button>
+      <button class="chip" data-crust="Thin" data-add="0">Thin</button>
+      <button class="chip" data-crust="Stuffed" data-add="2">Stuffed (+$2)</button>
+    </div>
+
+    <h3 style="margin:14px 0 6px;">Toppings (+$1 each)</h3>
+    <div class="chips" id="toppingChips">
+      <button class="chip" data-layer="mushroomsLayer" data-name="Mushrooms" data-add="1">Mushrooms</button>
+      <button class="chip" data-layer="basilLayer" data-name="Basil" data-add="1">Basil</button>
+      <button class="chip" data-layer="peppersLayer" data-name="Peppers" data-add="1">Peppers</button>
+      <button class="chip" data-layer="olivesLayer" data-name="Olives" data-add="1">Olives</button>
+      
+
+    </div>
+
+    <div class="price">Total: <span id="totalPrice">$12.99</span></div>
+
+    <a href="cart.html" class="btn-main" id="addBtn">Add to Cart</a>
+  </section>
+
+</main>
+
+<script>
+  // ---- cart helpers (matches your cart.html storage pattern) ----
+  function getCart(){ return JSON.parse(localStorage.getItem("cartItems")) || []; }
+  function setCart(items){ localStorage.setItem("cartItems", JSON.stringify(items)); }
+  function makeKey(name, size, crust, toppings){ return `${name}|${size}|${crust}|${toppings}`; }
+  function money(n){ return "$" + Number(n).toFixed(2); }
+  function updateCartCount(){
+    const count = getCart().reduce((sum, item) => sum + (item.qty || 0), 0);
+    document.querySelectorAll(".cart-count").forEach(el => el.textContent = count);
+  }
+
+  // ---- builder pricing ----
+  const BASE_PRICE = 12.99;
+
+  let chosenSize = { name: "Small", add: 0 };
+  let chosenCrust = { name: "Classic", add: 0 };
+  let chosenToppings = []; // {name, add, layerId}
+
+  function calcTotal(){
+    const toppingsAdd = chosenToppings.reduce((s,t)=> s + t.add, 0);
+    return BASE_PRICE + chosenSize.add + chosenCrust.add + toppingsAdd;
+  }
+
+  function refreshPrice(){
+    document.getElementById("totalPrice").textContent = money(calcTotal());
+  }
+
+  function setActiveChip(groupEl, btn){
+    groupEl.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+  }
+
+  // SIZE
+  document.getElementById("sizeChips").addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip");
+    if(!btn) return;
+    setActiveChip(document.getElementById("sizeChips"), btn);
+    chosenSize = { name: btn.dataset.size, add: Number(btn.dataset.add) };
+    refreshPrice();
+  });
+
+  // CRUST
+  document.getElementById("crustChips").addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip");
+    if(!btn) return;
+    setActiveChip(document.getElementById("crustChips"), btn);
+    chosenCrust = { name: btn.dataset.crust, add: Number(btn.dataset.add) };
+    refreshPrice();
+  });
+
+  // TOPPINGS
+  document.getElementById("toppingChips").addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip");
+    if(!btn) return;
+
+    const layerId = btn.dataset.layer;
+    const layer = document.getElementById(layerId);
+
+    const idx = chosenToppings.findIndex(t => t.layerId === layerId);
+    const isOn = idx >= 0;
+
+    if(isOn){
+      chosenToppings.splice(idx, 1);
+      btn.classList.remove("active");
+      layer.classList.add("hidden");
+    } else {
+      chosenToppings.push({ name: btn.dataset.name, add: Number(btn.dataset.add), layerId });
+      btn.classList.add("active");
+      layer.classList.remove("hidden");
+
+      layer.classList.remove("topping-drop");
+      void layer.offsetWidth;
+      layer.classList.add("topping-drop");
+    }
+
+    refreshPrice();
+  });
+
+  // ADD TO CART
+  document.getElementById("addBtn").addEventListener("click", () => {
+    const size = chosenSize.name;
+    const crust = chosenCrust.name;
+    const toppings = chosenToppings.map(t => t.name).sort().join(", ") || "Cheese";
+
+    const name = "Build Your Own Pizza";
+    const price = calcTotal();
+
+    const cart = getCart();
+    const key = makeKey(name, size, crust, toppings);
+
+    const existing = cart.find(i => i.key === key);
+    if(existing) existing.qty += 1;
+    else cart.push({ key, name, price, qty: 1, options: { size, crust, toppings } });
+
+    setCart(cart);
+    updateCartCount();
+  });
+
+  updateCartCount();
+  refreshPrice();
+</script>
+
+</body>
+</html>
